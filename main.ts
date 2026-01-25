@@ -256,6 +256,14 @@ export default class ColumnsPlugin extends Plugin {
 				const verticalResizer = document.createElement("div");
 				verticalResizer.className = "column-vertical-resizer";
 
+				// Apply hide/show logic using existing pattern
+				if (savedResizerColor) {
+					verticalResizer.classList.toggle("resizer-visible", showResizer);
+					if (!showResizer) {
+						verticalResizer.style.display = "none";
+					}
+				}
+
 				let isVerticalDragging = false;
 				let startY: number;
 				let startHeight: number;
@@ -471,6 +479,14 @@ export default class ColumnsPlugin extends Plugin {
 			// [NEW FEATURE] Add container vertical resizer
 			const containerResizer = document.createElement("div");
 			containerResizer.className = "container-vertical-resizer";
+
+			// Apply hide/show logic using existing pattern
+			if (savedResizerColor) {
+				containerResizer.classList.toggle("resizer-visible", showResizer);
+				if (!showResizer) {
+					containerResizer.style.display = "none";
+				}
+			}
 
 			let isContainerDragging = false;
 			let containerStartY: number;

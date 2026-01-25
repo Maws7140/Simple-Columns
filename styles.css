@@ -77,17 +77,31 @@ If your plugin does not need CSS, delete this file.
   bottom: 0;
   left: 0;
   right: 0;
-  height: 8px;
-  background-color: var(--sc-resizer-bg, rgba(128, 128, 128, 0.15));
+  height: 3px;
+  background-color: transparent;
   cursor: row-resize;
   z-index: 10;
-  transition: all 0.2s ease;
-  border-top: 1px solid var(--background-modifier-border);
+  transition: all 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Show individual resizer only when hovering the specific column */
+.column:hover .column-vertical-resizer {
+  opacity: 1;
+  pointer-events: auto;
+  background-color: rgba(88, 86, 214, 0.25); /* Purple/blue - different from accent */
+  height: 4px;
 }
 
 .column-vertical-resizer:hover {
-  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.5));
-  height: 12px;
+  background-color: rgba(88, 86, 214, 0.6) !important; /* Brighter purple/blue */
+  height: 6px !important;
+}
+
+/* When resizer is hidden via settings */
+.column-vertical-resizer.resizer-visible {
+  display: block;
 }
 
 /* Container vertical resizer */
@@ -96,8 +110,8 @@ If your plugin does not need CSS, delete this file.
   bottom: -6px;
   left: 0;
   right: 0;
-  height: 10px;
-  background-color: var(--sc-resizer-bg, rgba(128, 128, 128, 0.2));
+  height: 8px;
+  background-color: rgba(128, 128, 128, 0.15);
   cursor: row-resize;
   z-index: 11;
   transition: all 0.2s ease;
@@ -107,7 +121,12 @@ If your plugin does not need CSS, delete this file.
 
 .container-vertical-resizer:hover {
   background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
-  height: 14px;
+  height: 12px;
+}
+
+/* When resizer is hidden via settings */
+.container-vertical-resizer.resizer-visible {
+  display: block;
 }
 
 .cursor-row-resize {
