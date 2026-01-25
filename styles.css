@@ -16,12 +16,15 @@ If your plugin does not need CSS, delete this file.
   width: 100%;
   overflow: hidden;
   margin: 0.8em 0;
+  height: var(--sc-container-height, auto);
+  position: relative;
 }
 .markdown-columns-resizable .column {
   padding: 0.8em;
   overflow-wrap: break-word;
   overflow: auto;
   min-width: 5px;
+  position: relative;
 }
 
 /* Borders */
@@ -48,6 +51,7 @@ If your plugin does not need CSS, delete this file.
   background-color: var(--sc-column-bg, var(--background-primary));
   color: var(--sc-column-text-color, var(--text-normal));
   flex: 1 0 var(--sc-column-width);
+  height: var(--sc-column-height, auto);
 }
 
 /* Resizer */
@@ -67,12 +71,76 @@ If your plugin does not need CSS, delete this file.
   cursor: col-resize;
 }
 
+/* Vertical resizer for individual columns */
+.column-vertical-resizer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: transparent;
+  cursor: row-resize;
+  z-index: 10;
+}
+
+.column-vertical-resizer:hover {
+  background-color: var(--sc-resizer-hover-bg, rgba(128, 128, 128, 0.3));
+}
+
+/* Container vertical resizer */
+.container-vertical-resizer {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-color: transparent;
+  cursor: row-resize;
+  z-index: 11;
+}
+
+.container-vertical-resizer:hover {
+  background-color: var(--sc-resizer-hover-bg, rgba(128, 128, 128, 0.5));
+}
+
+.cursor-row-resize {
+  cursor: row-resize !important;
+}
+
+/* === Edit Column Button === */
+.edit-column-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  opacity: 0;
+  background-color: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.column:hover .edit-column-button {
+  opacity: 1;
+}
+
+.edit-column-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
     padding: var(--size-2-2) var(--size-2-3);
     position: absolute;
     top: var(--size-2-2);
-    inset-inline-end: calc(var(--size-2-2) + 35px); 
+    inset-inline-end: calc(var(--size-2-2) + 35px);
     display: flex;
     opacity: 0;
     color: var(--text-muted);
