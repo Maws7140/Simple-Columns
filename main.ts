@@ -4,8 +4,6 @@ import { CustomiseColumnsModal } from 'src/ui/columnModal';
 import { DEFAULT_SETTINGS, ColumnsPluginSettings, ColumnWidthsSettingTab } from 'src/ui/settings';
 import { createCustomiseButton } from 'src/ui/button';
 import { ColumnRenderer } from 'src/columnRenderer';
-import { createEditButton } from 'src/ui/editButton';
-import { EditColumnModal } from 'src/ui/editColumnModal';
 import { SourceUpdater } from 'src/sourceUpdater';
 
 
@@ -225,39 +223,88 @@ export default class ColumnsPlugin extends Plugin {
 
 
 
-				// [NEW FEATURE] Add edit button to column
-				const editBtn = createEditButton(col, i);
-				editBtn.addEventListener("click", async (e) => {
-					e.stopPropagation(); // Prevent event bubbling
+				// [NEW FEATURE] Make column directly editable on click
+				let isEditing = false;
+				let originalContent = parts[i].trim();
 
-					const sourceUpdater = new SourceUpdater(this.app);
-
-					// Get current content from source
-					const currentContent = await sourceUpdater.getColumnContent(blockId, i);
-
-					if (currentContent === null) {
-						new Notice("Could not retrieve column content. Please ensure the file is saved.");
+				col.addEventListener("click", (e) => {
+					// Don't trigger if clicking on links or other interactive elements
+					const target = e.target as HTMLElement;
+					if (target.tagName === 'A' || target.closest('a') || isEditing) {
 						return;
 					}
 
-					// Open edit modal
-					new EditColumnModal(
-						this.app,
-						this,
-						blockId,
-						i,
-						currentContent,
-						async (newContent) => {
-							const success = await sourceUpdater.updateColumnContent(blockId, i, newContent);
-							if (!success) {
-								throw new Error("Failed to update column content");
-							}
-							// Obsidian will automatically re-render the code block after file modification
-						}
-					).open();
-				});
+					isEditing = true;
+					originalContent = parts[i].trim();
 
-				col.appendChild(editBtn);
+					// Store the rendered content
+					const renderedContent = col.innerHTML;
+
+					// Clear column and add textarea
+					col.innerHTML = '';
+					col.style.padding = '0';
+
+					const textarea = document.createElement('textarea');
+					textarea.value = originalContent;
+					textarea.style.width = '100%';
+					textarea.style.height = '100%';
+					textarea.style.minHeight = '100px';
+					textarea.style.padding = '0.8em';
+					textarea.style.border = 'none';
+					textarea.style.outline = '2px solid var(--interactive-accent)';
+					textarea.style.backgroundColor = 'var(--background-primary)';
+					textarea.style.color = 'var(--text-normal)';
+					textarea.style.fontFamily = 'var(--font-monospace)';
+					textarea.style.fontSize = '14px';
+					textarea.style.resize = 'none';
+					textarea.style.boxSizing = 'border-box';
+
+					col.appendChild(textarea);
+					textarea.focus();
+					textarea.select();
+
+					const saveEdit = async () => {
+						const newContent = textarea.value;
+						if (newContent !== originalContent) {
+							const sourceUpdater = new SourceUpdater(this.app);
+							const success = await sourceUpdater.updateColumnContent(blockId, i, newContent);
+							if (success) {
+								new Notice(`Column ${i} updated`);
+							} else {
+								new Notice("Failed to update column", 3000);
+								// Restore original
+								col.innerHTML = renderedContent;
+								col.style.padding = '0.8em';
+							}
+						} else {
+							// No changes, just restore
+							col.innerHTML = renderedContent;
+							col.style.padding = '0.8em';
+						}
+						isEditing = false;
+					};
+
+					const cancelEdit = () => {
+						col.innerHTML = renderedContent;
+						col.style.padding = '0.8em';
+						isEditing = false;
+					};
+
+					// Save on blur
+					textarea.addEventListener("blur", saveEdit, { once: true });
+
+					// Keyboard shortcuts
+					textarea.addEventListener("keydown", (e) => {
+						if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+							e.preventDefault();
+							textarea.blur(); // Trigger save
+						} else if (e.key === 'Escape') {
+							e.preventDefault();
+							textarea.removeEventListener("blur", saveEdit);
+							cancelEdit();
+						}
+					});
+				});
 
 				if (savedResizerColor) {
 					const styleId = `sc-resizer-hover-style-${blockId}`;
