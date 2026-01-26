@@ -14,6 +14,14 @@ export default class ColumnsPlugin extends Plugin {
 
 		// Load columns from command palette
 		this.addCommand({
+    	  id: "one-column",
+    	  name: "Add 1 column",
+    	  callback: () => {
+    	   createMarkdownColumns(this.app, 1);
+    	  }
+    	});
+
+		this.addCommand({
     	  id: "two-columns",
     	  name: "Add 2 columns",
     	  callback: () => {
@@ -45,6 +53,14 @@ export default class ColumnsPlugin extends Plugin {
 					item.setIcon('between-vertical-end')
 
 					const submenu = item.setSubmenu();
+
+					submenu.addItem((subItem) => {
+						subItem.setTitle('1 column')
+							.setIcon('square')
+							.onClick(() => {
+								createMarkdownColumns(this.app, 1)
+							});
+					});
 
 					submenu.addItem((subItem) => {
 						subItem.setTitle('2 columns')
