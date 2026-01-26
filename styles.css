@@ -18,13 +18,23 @@ If your plugin does not need CSS, delete this file.
   margin: 0.8em 0;
   height: var(--sc-container-height, auto);
   position: relative;
+  transition: all 0.2s ease;
 }
 .markdown-columns-resizable .column {
-  padding: 0.8em;
+  padding: 0;
   overflow-wrap: break-word;
-  overflow: auto;
+  overflow: hidden;
   min-width: 5px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.column-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8em;
+  height: 100%;
 }
 
 /* Borders */
@@ -92,6 +102,7 @@ If your plugin does not need CSS, delete this file.
   pointer-events: auto;
   background-color: rgba(88, 86, 214, 0.25); /* Purple/blue - different from accent */
   height: 4px;
+  z-index: 12; /* Ensure it stays above container resizer */
 }
 
 .column-vertical-resizer:hover {
@@ -102,6 +113,7 @@ If your plugin does not need CSS, delete this file.
 /* When resizer is hidden via settings */
 .column-vertical-resizer.resizer-visible {
   display: block;
+  user-select: none;
 }
 
 /* Container vertical resizer */
@@ -111,22 +123,24 @@ If your plugin does not need CSS, delete this file.
   left: 0;
   right: 0;
   height: 8px;
-  background-color: rgba(128, 128, 128, 0.15);
+  background-color: transparent;
   cursor: row-resize;
   z-index: 11;
   transition: all 0.2s ease;
-  border-top: 2px solid var(--background-modifier-border);
+  border-top: 2px solid transparent;
   border-radius: 0 0 var(--sc-border-radius, 0) var(--sc-border-radius, 0);
 }
 
 .container-vertical-resizer:hover {
-  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
+  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6)) !important;
   height: 12px;
+  border-top-color: var(--interactive-accent);
 }
 
-/* When resizer is hidden via settings */
+/* When resizer is shown via settings */
 .container-vertical-resizer.resizer-visible {
-  display: block;
+  background-color: rgba(128, 128, 128, 0.15);
+  border-top-color: var(--background-modifier-border);
 }
 
 .cursor-row-resize {

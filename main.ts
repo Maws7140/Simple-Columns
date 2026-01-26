@@ -1,10 +1,9 @@
 import { createMarkdownColumns } from 'src/ui/createColumns';
-import { MarkdownRenderer, MarkdownView, Plugin, Notice } from 'obsidian';
+import { MarkdownRenderer, MarkdownView, Plugin } from 'obsidian';
 import { CustomiseColumnsModal } from 'src/ui/columnModal';
 import { DEFAULT_SETTINGS, ColumnsPluginSettings, ColumnWidthsSettingTab } from 'src/ui/settings';
 import { createCustomiseButton } from 'src/ui/button';
 import { ColumnRenderer } from 'src/columnRenderer';
-import { SourceUpdater } from 'src/sourceUpdater';
 
 
 export default class ColumnsPlugin extends Plugin {
@@ -195,13 +194,23 @@ export default class ColumnsPlugin extends Plugin {
 			const savedTextColors = this.app.loadLocalStorage(`sc-columnTextColors-${blockId}`);	
 			const columnTextColors: Record<number, string> = savedTextColors ? JSON.parse(savedTextColors) : {};
 
+			// [NEW FEATURE] Load scroll positions
+			const scrollKey = `sc-column-scrolls-${blockId}`;
+			const savedScrolls = JSON.parse(this.app.loadLocalStorage(scrollKey) || '{}');
+
 			const borderData = JSON.parse(this.app.loadLocalStorage(`sc-borderColor-${blockId}`) || '{}');
 			const savedBorderColor = borderData.color;
 			const showBorder = borderData.show;
+			const savedBorderRadius = borderData.radius;
+
 			if (savedBorderColor) {
 				// prevents clashing with global border style
 				container.style.setProperty("--sc-border-shown", showBorder ? "solid" : "none");
 				container.style.setProperty("--sc-border-color", savedBorderColor);
+			}
+
+			if (savedBorderRadius !== undefined) {
+				container.style.setProperty("--sc-border-radius", `${savedBorderRadius}px`);
 			}
 
 			// [NEW FEATURE] Apply container height from YAML or localStorage
@@ -242,26 +251,33 @@ export default class ColumnsPlugin extends Plugin {
 				col.classList.add(`text-${align}`);
 				col.classList.add('column-style');
 
+				// [NEW FEATURE] Create wrapper for scrollable content (keeps resizer fixed)
+				const contentWrapper = document.createElement("div");
+				contentWrapper.className = "column-content-wrapper";
+
 				await MarkdownRenderer.render(
 					this.app,
 					parts[i].trim(),
-					col,
+					contentWrapper,
 					ctx.sourcePath,
 					child
 				);
 
-				container.appendChild(col);
+				// Save scroll position on scroll
+				contentWrapper.addEventListener("scroll", () => {
+					savedScrolls[i] = contentWrapper.scrollTop;
+					this.app.saveLocalStorage(scrollKey, JSON.stringify(savedScrolls));
+				});
 
-				// [NEW FEATURE] Add vertical resizer for each column
+				col.appendChild(contentWrapper);
+
+				// [NEW FEATURE] Add vertical resizer AFTER content wrapper (won't scroll)
 				const verticalResizer = document.createElement("div");
 				verticalResizer.className = "column-vertical-resizer";
 
 				// Apply hide/show logic using existing pattern
 				if (savedResizerColor) {
 					verticalResizer.classList.toggle("resizer-visible", showResizer);
-					if (!showResizer) {
-						verticalResizer.style.display = "none";
-					}
 				}
 
 				let isVerticalDragging = false;
@@ -301,89 +317,7 @@ export default class ColumnsPlugin extends Plugin {
 				});
 
 				col.appendChild(verticalResizer);
-
-				// [NEW FEATURE] Make column directly editable on click
-				let isEditing = false;
-				let originalContent = parts[i].trim();
-
-				col.addEventListener("click", (e) => {
-					// Don't trigger if clicking on links or other interactive elements
-					const target = e.target as HTMLElement;
-					if (target.tagName === 'A' || target.closest('a') || isEditing) {
-						return;
-					}
-
-					isEditing = true;
-					originalContent = parts[i].trim();
-
-					// Store the rendered content
-					const renderedContent = col.innerHTML;
-
-					// Clear column and add textarea
-					col.innerHTML = '';
-					col.style.padding = '0';
-
-					const textarea = document.createElement('textarea');
-					textarea.value = originalContent;
-					textarea.style.width = '100%';
-					textarea.style.height = '100%';
-					textarea.style.minHeight = '100px';
-					textarea.style.padding = '0.8em';
-					textarea.style.border = 'none';
-					textarea.style.outline = '2px solid var(--interactive-accent)';
-					textarea.style.backgroundColor = 'var(--background-primary)';
-					textarea.style.color = 'var(--text-normal)';
-					textarea.style.fontFamily = 'var(--font-monospace)';
-					textarea.style.fontSize = '14px';
-					textarea.style.resize = 'none';
-					textarea.style.boxSizing = 'border-box';
-
-					col.appendChild(textarea);
-					textarea.focus();
-					textarea.select();
-
-					const saveEdit = async () => {
-						const newContent = textarea.value;
-						if (newContent !== originalContent) {
-							const sourceUpdater = new SourceUpdater(this.app);
-							const success = await sourceUpdater.updateColumnContent(blockId, i, newContent);
-							if (success) {
-								new Notice(`Column ${i} updated`);
-							} else {
-								new Notice("Failed to update column", 3000);
-								// Restore original
-								col.innerHTML = renderedContent;
-								col.style.padding = '0.8em';
-							}
-						} else {
-							// No changes, just restore
-							col.innerHTML = renderedContent;
-							col.style.padding = '0.8em';
-						}
-						isEditing = false;
-					};
-
-					const cancelEdit = () => {
-						col.innerHTML = renderedContent;
-						col.style.padding = '0.8em';
-						isEditing = false;
-					};
-
-					// Save on blur
-					textarea.addEventListener("blur", saveEdit, { once: true });
-
-					// Keyboard shortcuts
-					textarea.addEventListener("keydown", (e) => {
-						if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-							e.preventDefault();
-							textarea.blur(); // Trigger save
-						} else if (e.key === 'Escape') {
-							e.preventDefault();
-							textarea.removeEventListener("blur", saveEdit);
-							cancelEdit();
-						}
-					});
-				});
+				container.appendChild(col);
 
 				if (savedResizerColor) {
 				  const styleId = `sc-resizer-hover-style-${blockId}`;
@@ -398,8 +332,18 @@ export default class ColumnsPlugin extends Plugin {
 				  hoverStyle.id = styleId; // Tag it for future cleanup
 				  hoverStyle.textContent = css;
 				  document.head.appendChild(hoverStyle);
-				} else{
-					document.getElementById(`sc-resizer-hover-style-${blockId}`)?.remove();
+				} else {
+					// Even if no custom color, ensure it shows on hover using default behavior or accent
+					const styleId = `sc-resizer-hover-style-${blockId}`;
+					document.getElementById(styleId)?.remove();
+					
+					const css = `.markdown-columns-resizable[id="${blockId}"] > .column-resizer:hover {
+					  background-color: var(--interactive-accent) !important;
+					}`;
+					const hoverStyle = document.createElement('style');
+					hoverStyle.id = styleId;
+					hoverStyle.textContent = css;
+					document.head.appendChild(hoverStyle);
 				}
 
 				if (i < parts.length - 1) {
@@ -483,9 +427,6 @@ export default class ColumnsPlugin extends Plugin {
 			// Apply hide/show logic using existing pattern
 			if (savedResizerColor) {
 				containerResizer.classList.toggle("resizer-visible", showResizer);
-				if (!showResizer) {
-					containerResizer.style.display = "none";
-				}
 			}
 
 			let isContainerDragging = false;
@@ -538,6 +479,20 @@ export default class ColumnsPlugin extends Plugin {
 			
 			// Add the columns container to the rendered element
 			el.appendChild(container);
+
+			// [NEW FEATURE] Restore scroll positions AFTER appending to DOM
+			// We use requestAnimationFrame and a small timeout to ensure the browser has finished layout
+			requestAnimationFrame(() => {
+				setTimeout(() => {
+					const wrappers = container.querySelectorAll(".column-content-wrapper");
+					wrappers.forEach((wrapper, index) => {
+						const colIdx = index + 1;
+						if (savedScrolls[colIdx]) {
+							wrapper.scrollTop = savedScrolls[colIdx];
+						}
+					});
+				}, 50);
+			});
 		});
 	}
 

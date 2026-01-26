@@ -15,13 +15,15 @@ function clearBlockStyles(blockId: string, parts: number) {
 
 	(container as HTMLElement).removeAttribute("style");
 	if (container instanceof HTMLElement) {
-        const dividers = container.querySelectorAll(".column-resizer");
+        const dividers = container.querySelectorAll(".column-resizer, .column-vertical-resizer, .container-vertical-resizer");
         dividers.forEach(divider => {
             if (divider instanceof HTMLElement) {
 				divider.removeAttribute("style");
+				divider.classList.remove("resizer-visible");
             }
         });
     }
+	document.getElementById(`sc-resizer-hover-style-${blockId}`)?.remove();
 }
 
 function applyColumnAlignmentStyles(blockId: string, alignments: Record<number, "left" | "center" | "right">) {
@@ -55,28 +57,34 @@ function applyColumnTextColorStyles(blockId: string, textColors: Record<number, 
 	}
 }
 
-function applyBorderStyles(blockId: string, borderColorRGB: string, showBorder: boolean) {
+function applyBorderStyles(blockId: string, borderColorRGB: string, showBorder: boolean, borderRadius: number) {
     const block = document.querySelector(`.markdown-columns-resizable[id="${blockId}"]`);
     if (block instanceof HTMLElement) {
 		block.style.setProperty("--sc-border-shown", showBorder ? "solid" : "none");
 		block.style.setProperty("--sc-border-color", borderColorRGB);
+		block.style.setProperty("--sc-border-radius", `${borderRadius}px`);
     }
 }
 
 function applyResizerStyles(blockId: string, resizerColorRGB: string, showResizer: boolean) {
     const block = document.querySelector(`.markdown-columns-resizable[id="${blockId}"]`);
     if (block instanceof HTMLElement) {
-        const resizers = block.querySelectorAll(".column-resizer");
+        const resizers = block.querySelectorAll(".column-resizer, .column-vertical-resizer, .container-vertical-resizer");
         resizers.forEach(resizer => {
             if (resizer instanceof HTMLElement) {
 				resizer.classList.toggle("resizer-visible", showResizer);
 				resizer.style.setProperty("--sc-resizer-bg", showResizer ? resizerColorRGB : "transparent");
 			}
         });
-		let css = `.markdown-columns-resizable[id="${blockId}"] > .column-resizer:hover{ background-color: ${resizerColorRGB} !important; }`;
-		let hoverStyle = document.createElement('style');
-		document.head.appendChild(hoverStyle);
-		hoverStyle.textContent = css;	
+
+        const styleId = `sc-resizer-hover-style-${blockId}`;
+        document.getElementById(styleId)?.remove();
+
+        let css = `.markdown-columns-resizable[id="${blockId}"] > .column-resizer:hover{ background-color: ${resizerColorRGB} !important; }`;
+        let hoverStyle = document.createElement('style');
+        hoverStyle.id = styleId;
+        document.head.appendChild(hoverStyle);
+        hoverStyle.textContent = css;
     }
 }
 
@@ -92,6 +100,7 @@ export class CustomiseColumnsModal extends Modal {
     columnTextColors: Record<number, string> = {}; 
 	showBorder: boolean;
 	showResizer: boolean;
+	borderRadius: number;
 
 	constructor(app: App, plugin: ColumnsPlugin, blockId: string, numberOfColumns: number, columnAlignments: Record<number, "left" | "center" | "right"> = {}, columnBackgrounds: Record<number, string> = {}, columnTextColors: Record<number, string> = {}) {   
 		super(app);
@@ -105,6 +114,7 @@ export class CustomiseColumnsModal extends Modal {
 		const borderData = JSON.parse(this.app.loadLocalStorage(`sc-borderColor-${this.blockId}`) || '{}');
 		this.showBorder = borderData.show ?? this.plugin.settings.showBorders;
 		this.borderColorRGB = borderData.color ?? convertToRGBA(this.plugin.settings.borderColor, this.plugin.settings.borderTransparency); 
+		this.borderRadius = borderData.radius ?? this.plugin.settings.borderRadius;
 
 		const resizerData = JSON.parse(this.app.loadLocalStorage(`sc-resizerColor-${this.blockId}`) || '{}');
 		this.showResizer = resizerData.show ?? this.plugin.settings.showResizer;	
@@ -199,6 +209,19 @@ export class CustomiseColumnsModal extends Modal {
 		    	    }
 		    	  });
 		  	});
+
+		// Setting for Border Radius
+		new Setting(contentEl)
+			.setName('Border radius')
+			.setDesc('Set border radius in pixels for rounded corners.')
+			.addText((text) => {
+				text
+					.setPlaceholder('0')
+					.setValue(this.borderRadius.toString())
+					.onChange((value) => {
+						this.borderRadius = parseInt(value) || 0;
+					});
+			});
 
 		// Toggle show/hide resizer
     	new Setting(contentEl)
@@ -363,11 +386,12 @@ export class CustomiseColumnsModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		applyBorderStyles(this.blockId, this.borderColorRGB, this.showBorder);
+		applyBorderStyles(this.blockId, this.borderColorRGB, this.showBorder, this.borderRadius);
 		const outlineKey = `sc-borderColor-${this.blockId}`;
 		this.app.saveLocalStorage(outlineKey, JSON.stringify({
 			color: this.borderColorRGB,
-			show: this.showBorder
+			show: this.showBorder,
+			radius: this.borderRadius
 		}));
 		
 		applyResizerStyles(this.blockId, this.resizerColorRGB, this.showResizer);
