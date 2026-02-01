@@ -302,7 +302,27 @@ export class CustomiseColumnsModal extends Modal {
   				    });
   		});
 
-  
+		// [NEW FEATURE] Column Height Setting
+		const columnHeightsKey = `sc-column-heights-${this.blockId}`;
+		const savedHeights = this.app.loadLocalStorage(columnHeightsKey);
+		const columnHeights: string[] = savedHeights ? JSON.parse(savedHeights) : [];
+
+		new Setting(columnGroup)
+			.setName("Column height")
+			.setDesc("Set a fixed height for this column (e.g., 300px, 20em, auto)")
+			.addText((text) => {
+				const currentHeight = columnHeights[i - 1] || "auto";
+				text
+					.setPlaceholder("auto")
+					.setValue(currentHeight)
+					.onChange((value) => {
+						columnHeights[i - 1] = value || "auto";
+						// Save to localStorage
+						this.app.saveLocalStorage(columnHeightsKey, JSON.stringify(columnHeights));
+					});
+			});
+
+
 	    // Text Alignment Setting
 	    const textAlignSetting = new Setting(columnGroup)
 	    	.setName(`Alignment`)
@@ -381,5 +401,18 @@ export class CustomiseColumnsModal extends Modal {
             const backgroundKey = `sc-columnBackgrounds-${this.blockId}`;
             this.app.saveLocalStorage(backgroundKey, JSON.stringify(this.columnBackgrounds));
         }
+
+		// [NEW FEATURE] Apply column heights
+		const columnHeightsKey = `sc-column-heights-${this.blockId}`;
+		const savedHeights = this.app.loadLocalStorage(columnHeightsKey);
+		if (savedHeights) {
+			const heights: string[] = JSON.parse(savedHeights);
+			const columns = document.querySelectorAll(`.markdown-columns-resizable[id="${this.blockId}"] > .column`);
+			columns.forEach((col, index) => {
+				if (heights[index]) {
+					(col as HTMLElement).style.setProperty('--sc-column-height', heights[index]);
+				}
+			});
+		}
 	}
 }

@@ -16,12 +16,16 @@ If your plugin does not need CSS, delete this file.
   width: 100%;
   overflow: hidden;
   margin: 0.8em 0;
+  height: var(--sc-container-height, auto);
+  position: relative;
 }
+
 .markdown-columns-resizable .column {
   padding: 0.8em;
   overflow-wrap: break-word;
   overflow: auto;
   min-width: 5px;
+  position: relative;
 }
 
 /* Borders */
@@ -36,9 +40,11 @@ If your plugin does not need CSS, delete this file.
 .text-left {
   text-align: left;
 }
+
 .text-center {
   text-align: center;
 }
+
 .text-right {
   text-align: right;
 }
@@ -48,10 +54,11 @@ If your plugin does not need CSS, delete this file.
   background-color: var(--sc-column-bg, var(--background-primary));
   color: var(--sc-column-text-color, var(--text-normal));
   flex: 1 0 var(--sc-column-width);
+  height: var(--sc-column-height, auto);
 }
 
 /* Resizer */
- .column-resizer {
+.column-resizer {
   background-color: var(--sc-resizer-bg, transparent);
   width: var(--sc-resizer-width, 4px);
   cursor: col-resize;
@@ -60,34 +67,99 @@ If your plugin does not need CSS, delete this file.
 .column-resizer:hover {
   background-color: var(--sc-resizer-hover-bg, var(--sc-resizer-bg, transparent));
 }
+
 .resizer-visible {
   display: block;
 }
+
 .cursor-col-resize {
   cursor: col-resize;
 }
 
+/* Vertical resizer for individual columns */
+.column-vertical-resizer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: transparent;
+  cursor: row-resize;
+  z-index: 10;
+  transition: all 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Show individual resizer only when hovering the specific column */
+.column:hover .column-vertical-resizer {
+  opacity: 1;
+  pointer-events: auto;
+  background-color: rgba(88, 86, 214, 0.25);
+  /* Purple/blue - different from accent */
+  height: 4px;
+}
+
+.column-vertical-resizer:hover {
+  background-color: rgba(88, 86, 214, 0.6) !important;
+  /* Brighter purple/blue */
+  height: 6px !important;
+}
+
+/* When resizer is hidden via settings */
+.column-vertical-resizer.resizer-visible {
+  display: block;
+}
+
+/* Container vertical resizer */
+.container-vertical-resizer {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-color: rgba(128, 128, 128, 0.15);
+  cursor: row-resize;
+  z-index: 11;
+}
+
+.container-vertical-resizer:hover {
+  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
+  height: 12px;
+}
+
+/* When resizer is hidden via settings */
+.container-vertical-resizer.resizer-visible {
+  display: block;
+}
+
+.cursor-row-resize {
+  cursor: row-resize !important;
+}
+
+
+
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
-    padding: var(--size-2-2) var(--size-2-3);
-    position: absolute;
-    top: var(--size-2-2);
-    inset-inline-end: calc(var(--size-2-2) + 35px); 
-    display: flex;
-    opacity: 0;
-    color: var(--text-muted);
-    border-radius: var(--radius-s);
-    cursor: var(--cursor);
-	  background-color: transparent;
-    transition: background-color 0.2s ease;
+  padding: var(--size-2-2) var(--size-2-3);
+  position: absolute;
+  top: var(--size-2-2);
+  inset-inline-end: calc(var(--size-2-2) + 35px);
+  display: flex;
+  opacity: 0;
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  cursor: var(--cursor);
+  background-color: transparent;
+  transition: background-color 0.2s ease;
 }
 
 .markdown-source-view.mod-cm6 .cm-preview-code-block:hover .customise-columns-button {
-    opacity: 1;
+  opacity: 1;
 }
 
 .markdown-source-view.mod-cm6 .customise-columns-button:hover {
-    background-color: var(--background-modifier-hover);
+  background-color: var(--background-modifier-hover);
 }
 
 /* === Custom Column Modal Styling === */
@@ -124,6 +196,7 @@ If your plugin does not need CSS, delete this file.
 .column-resizer-settings {
   margin-top: 25px;
 }
-.column-advanced-settings{
+
+.column-advanced-settings {
   margin-top: 25px;
 }

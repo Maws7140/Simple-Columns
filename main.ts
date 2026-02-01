@@ -1,9 +1,10 @@
 import { createMarkdownColumns } from 'src/ui/createColumns';
-import { MarkdownRenderer, MarkdownView, Plugin } from 'obsidian';
-import { CustomiseColumnsModal } from 'src/ui/columnModal';	
+import { MarkdownRenderer, MarkdownView, Plugin, Notice } from 'obsidian';
+import { CustomiseColumnsModal } from 'src/ui/columnModal';
 import { DEFAULT_SETTINGS, ColumnsPluginSettings, ColumnWidthsSettingTab } from 'src/ui/settings';
 import { createCustomiseButton } from 'src/ui/button';
 import { ColumnRenderer } from 'src/columnRenderer';
+
 
 
 export default class ColumnsPlugin extends Plugin {
@@ -100,10 +101,31 @@ export default class ColumnsPlugin extends Plugin {
 			while ((match = ratioRegex.exec(metadataSection)) !== null) {
 			  const colIndex = parseInt(match[1], 10); // 1-based
 			  const ratio = parseFloat(match[2].trim());
-			
+
 			  if (!isNaN(ratio) && colIndex >= 1 && colIndex <= 4) {
 			    providedRatios[colIndex - 1] = ratio; // store as 0-based index
 			  }
+			}
+
+			// [NEW FEATURE] Extract height values from YAML
+			const heightRegex = /^column-(\d+)-height:\s*(.+)$/gm;
+			let heightMatch: RegExpExecArray | null;
+			const providedHeights: Record<number, string> = {};
+
+			while ((heightMatch = heightRegex.exec(metadataSection)) !== null) {
+			  const colIndex = parseInt(heightMatch[1], 10);
+			  const height = heightMatch[2].trim();
+
+			  if (colIndex >= 1 && colIndex <= totalCols) {
+			    providedHeights[colIndex] = height;
+			  }
+			}
+
+			// Extract container height from YAML
+			const containerHeightMatch = metadataSection.match(/^container-height:\s*(.+)$/m);
+			let containerHeight: string | null = null;
+			if (containerHeightMatch) {
+			  containerHeight = containerHeightMatch[1].trim();
 			}
 			
 			// Render yaml as HTML container for the columns
@@ -154,7 +176,15 @@ export default class ColumnsPlugin extends Plugin {
 			}
 
 			const savedWidths = this.app.loadLocalStorage(storageKey);
-			const columnWidths: string[] = savedWidths ? JSON.parse(savedWidths) : [];	
+			const columnWidths: string[] = savedWidths ? JSON.parse(savedWidths) : [];
+
+			// [NEW FEATURE] Load height data from localStorage
+			const containerHeightKey = `sc-container-height-${blockId}`;
+			const savedContainerHeight = this.app.loadLocalStorage(containerHeightKey);
+
+			const columnHeightsKey = `sc-column-heights-${blockId}`;
+			const savedHeights = this.app.loadLocalStorage(columnHeightsKey);
+			const columnHeights: string[] = savedHeights ? JSON.parse(savedHeights) : [];
 
 			const savedAlignments = this.app.loadLocalStorage(`sc-columnAlignments-${blockId}`);
 			const columnAlignments: Record<number, "left" | "center" | "right"> = savedAlignments ? JSON.parse(savedAlignments) : {};
@@ -172,6 +202,14 @@ export default class ColumnsPlugin extends Plugin {
 				// prevents clashing with global border style
 				container.style.setProperty("--sc-border-shown", showBorder ? "solid" : "none");
 				container.style.setProperty("--sc-border-color", savedBorderColor);
+			}
+
+			// [NEW FEATURE] Apply container height from YAML or localStorage
+			if (containerHeight) {
+				container.style.setProperty("--sc-container-height", containerHeight);
+				this.app.saveLocalStorage(containerHeightKey, containerHeight);
+			} else if (savedContainerHeight) {
+				container.style.setProperty("--sc-container-height", savedContainerHeight);
 			}
 
 			const resizerData = JSON.parse(this.app.loadLocalStorage(`sc-resizerColor-${blockId}`) || '{}');
@@ -197,6 +235,10 @@ export default class ColumnsPlugin extends Plugin {
 				col.style.setProperty('--sc-column-text-color', textColor);
 				col.style.setProperty('--sc-column-width', width);
 
+				// [NEW FEATURE] Apply column height from YAML or localStorage
+				const height = providedHeights[i] || columnHeights[i - 1] || "auto";
+				col.style.setProperty('--sc-column-height', height);
+
 				col.classList.add(`text-${align}`);
 				col.classList.add('column-style');
 
@@ -209,6 +251,58 @@ export default class ColumnsPlugin extends Plugin {
 				);
 
 				container.appendChild(col);
+
+				// [NEW FEATURE] Add vertical resizer for each column
+				const verticalResizer = document.createElement("div");
+				verticalResizer.className = "column-vertical-resizer";
+
+				// Apply hide/show logic using existing pattern
+				if (savedResizerColor) {
+					verticalResizer.classList.toggle("resizer-visible", showResizer);
+					if (!showResizer) {
+						verticalResizer.style.display = "none";
+					}
+				}
+
+				let isVerticalDragging = false;
+				let startY: number;
+				let startHeight: number;
+
+				verticalResizer.addEventListener("mousedown", (e) => {
+					isVerticalDragging = true;
+					document.body.classList.add("cursor-row-resize");
+					startY = e.clientY;
+					startHeight = col.getBoundingClientRect().height;
+					e.preventDefault();
+				});
+
+				document.addEventListener("mousemove", (e) => {
+					if (!isVerticalDragging) return;
+
+					const dy = e.clientY - startY;
+					const newHeight = startHeight + dy;
+
+					if (newHeight < 50) return; // Minimum height
+
+					col.style.setProperty('--sc-column-height', `${newHeight}px`);
+				});
+
+				document.addEventListener("mouseup", () => {
+					if (isVerticalDragging) {
+						isVerticalDragging = false;
+						document.body.classList.remove("cursor-row-resize");
+
+						// Save column heights
+						const heights = Array.from(container.querySelectorAll(".column")).map(
+							(col: any) => getComputedStyle(col).getPropertyValue('--sc-column-height')?.trim() || "auto"
+						);
+						this.app.saveLocalStorage(columnHeightsKey, JSON.stringify(heights));
+					}
+				});
+
+				col.appendChild(verticalResizer);
+
+
 
 				if (savedResizerColor) {
 				  const styleId = `sc-resizer-hover-style-${blockId}`;
@@ -300,6 +394,55 @@ export default class ColumnsPlugin extends Plugin {
 					});
 				}
 			}
+
+			// [NEW FEATURE] Add container vertical resizer
+			const containerResizer = document.createElement("div");
+			containerResizer.className = "container-vertical-resizer";
+
+			// Apply hide/show logic using existing pattern
+			if (savedResizerColor) {
+				containerResizer.classList.toggle("resizer-visible", showResizer);
+				if (!showResizer) {
+					containerResizer.style.display = "none";
+				}
+			}
+
+			let isContainerDragging = false;
+			let containerStartY: number;
+			let containerStartHeight: number;
+
+			containerResizer.addEventListener("mousedown", (e) => {
+				isContainerDragging = true;
+				document.body.classList.add("cursor-row-resize");
+				containerStartY = e.clientY;
+				containerStartHeight = container.getBoundingClientRect().height;
+				e.preventDefault();
+			});
+
+			document.addEventListener("mousemove", (e) => {
+				if (!isContainerDragging) return;
+
+				const dy = e.clientY - containerStartY;
+				const newHeight = containerStartHeight + dy;
+
+				if (newHeight < 100) return; // Minimum container height
+
+				container.style.setProperty('--sc-container-height', `${newHeight}px`);
+			});
+
+			document.addEventListener("mouseup", () => {
+				if (isContainerDragging) {
+					isContainerDragging = false;
+					document.body.classList.remove("cursor-row-resize");
+
+					const finalHeight = getComputedStyle(container).getPropertyValue('--sc-container-height')?.trim();
+					if (finalHeight) {
+						this.app.saveLocalStorage(containerHeightKey, finalHeight);
+					}
+				}
+			});
+
+			container.appendChild(containerResizer);
 
 			// Add a button to customise the columns within the code block
 			const parent = el.parentElement;
