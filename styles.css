@@ -77,51 +77,6 @@ If your plugin does not need CSS, delete this file.
 
 <<<<<<< HEAD
 
-=======
-/* Vertical resizer for individual columns */
-.column-vertical-resizer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 8px;
-  background-color: var(--sc-resizer-bg, rgba(128, 128, 128, 0.15));
-  cursor: row-resize;
-  z-index: 10;
-  transition: all 0.2s ease;
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-.column-vertical-resizer:hover {
-  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.5));
-  height: 12px;
-}
-
-/* Container vertical resizer */
-.container-vertical-resizer {
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  right: 0;
-  height: 10px;
-  background-color: var(--sc-resizer-bg, rgba(128, 128, 128, 0.2));
-  cursor: row-resize;
-  z-index: 11;
-  transition: all 0.2s ease;
-  border-top: 2px solid var(--background-modifier-border);
-  border-radius: 0 0 var(--sc-border-radius, 0) var(--sc-border-radius, 0);
-}
-
-.container-vertical-resizer:hover {
-  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
-  height: 14px;
-}
-
-.cursor-row-resize {
-  cursor: row-resize !important;
-}
->>>>>>> 58d8a1a (Fix direct editing to use inline contenteditable approach)
-
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
   padding: var(--size-2-2) var(--size-2-3);
