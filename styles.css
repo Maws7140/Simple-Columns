@@ -16,12 +16,15 @@ If your plugin does not need CSS, delete this file.
   width: 100%;
   overflow: hidden;
   margin: 0.8em 0;
+
 }
+
 .markdown-columns-resizable .column {
   padding: 0.8em;
   overflow-wrap: break-word;
   overflow: auto;
   min-width: 5px;
+  position: relative;
 }
 
 /* Borders */
@@ -36,9 +39,11 @@ If your plugin does not need CSS, delete this file.
 .text-left {
   text-align: left;
 }
+
 .text-center {
   text-align: center;
 }
+
 .text-right {
   text-align: right;
 }
@@ -48,10 +53,11 @@ If your plugin does not need CSS, delete this file.
   background-color: var(--sc-column-bg, var(--background-primary));
   color: var(--sc-column-text-color, var(--text-normal));
   flex: 1 0 var(--sc-column-width);
+
 }
 
 /* Resizer */
- .column-resizer {
+.column-resizer {
   background-color: var(--sc-resizer-bg, transparent);
   width: var(--sc-resizer-width, 4px);
   cursor: col-resize;
@@ -60,34 +66,66 @@ If your plugin does not need CSS, delete this file.
 .column-resizer:hover {
   background-color: var(--sc-resizer-hover-bg, var(--sc-resizer-bg, transparent));
 }
+
 .resizer-visible {
   display: block;
 }
+
 .cursor-col-resize {
   cursor: col-resize;
 }
 
+
+
+/* === Edit Column Button === */
+.edit-column-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  opacity: 0;
+  background-color: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.column:hover .edit-column-button {
+  opacity: 1;
+}
+
+.edit-column-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
-    padding: var(--size-2-2) var(--size-2-3);
-    position: absolute;
-    top: var(--size-2-2);
-    inset-inline-end: calc(var(--size-2-2) + 35px); 
-    display: flex;
-    opacity: 0;
-    color: var(--text-muted);
-    border-radius: var(--radius-s);
-    cursor: var(--cursor);
-	  background-color: transparent;
-    transition: background-color 0.2s ease;
+  padding: var(--size-2-2) var(--size-2-3);
+  position: absolute;
+  top: var(--size-2-2);
+  inset-inline-end: calc(var(--size-2-2) + 35px);
+  display: flex;
+  opacity: 0;
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  cursor: var(--cursor);
+  background-color: transparent;
+  transition: background-color 0.2s ease;
 }
 
 .markdown-source-view.mod-cm6 .cm-preview-code-block:hover .customise-columns-button {
-    opacity: 1;
+  opacity: 1;
 }
 
 .markdown-source-view.mod-cm6 .customise-columns-button:hover {
-    background-color: var(--background-modifier-hover);
+  background-color: var(--background-modifier-hover);
 }
 
 /* === Custom Column Modal Styling === */
@@ -124,6 +162,7 @@ If your plugin does not need CSS, delete this file.
 .column-resizer-settings {
   margin-top: 25px;
 }
-.column-advanced-settings{
+
+.column-advanced-settings {
   margin-top: 25px;
 }

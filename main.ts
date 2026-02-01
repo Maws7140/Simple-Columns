@@ -1,9 +1,12 @@
 import { createMarkdownColumns } from 'src/ui/createColumns';
-import { MarkdownRenderer, MarkdownView, Plugin } from 'obsidian';
-import { CustomiseColumnsModal } from 'src/ui/columnModal';	
+import { MarkdownRenderer, MarkdownView, Plugin, Notice } from 'obsidian';
+import { CustomiseColumnsModal } from 'src/ui/columnModal';
 import { DEFAULT_SETTINGS, ColumnsPluginSettings, ColumnWidthsSettingTab } from 'src/ui/settings';
 import { createCustomiseButton } from 'src/ui/button';
 import { ColumnRenderer } from 'src/columnRenderer';
+import { createEditButton } from 'src/ui/editButton';
+import { EditColumnModal } from 'src/ui/editColumnModal';
+import { SourceUpdater } from 'src/sourceUpdater';
 
 
 export default class ColumnsPlugin extends Plugin {
@@ -14,28 +17,28 @@ export default class ColumnsPlugin extends Plugin {
 
 		// Load columns from command palette
 		this.addCommand({
-    	  id: "two-columns",
-    	  name: "Add 2 columns",
-    	  callback: () => {
-    	   createMarkdownColumns(this.app, 2);
-    	  }
-    	});
+			id: "two-columns",
+			name: "Add 2 columns",
+			callback: () => {
+				createMarkdownColumns(this.app, 2);
+			}
+		});
 
-    	this.addCommand({
-    	  id: "three-columns",
-    	  name: "Add 3 columns",
-    	  callback: () => {
-    	    createMarkdownColumns(this.app, 3);
-    	  }
-    	});
+		this.addCommand({
+			id: "three-columns",
+			name: "Add 3 columns",
+			callback: () => {
+				createMarkdownColumns(this.app, 3);
+			}
+		});
 
-    	this.addCommand({
-    	  id: "four-columns",
-    	  name: "Add 4 columns",
-    	  callback: () => {
-    	    createMarkdownColumns(this.app, 4);
-    	  }
-    	});
+		this.addCommand({
+			id: "four-columns",
+			name: "Add 4 columns",
+			callback: () => {
+				createMarkdownColumns(this.app, 4);
+			}
+		});
 
 		// Menu item to create columns on the current line
 		this.registerEvent(
@@ -77,7 +80,7 @@ export default class ColumnsPlugin extends Plugin {
 		// Apply styles to the columns based on settings
 		await this.loadSettings();
 		const columnSettingsTab = new ColumnWidthsSettingTab(this.app, this)
-  		this.addSettingTab(columnSettingsTab);
+		this.addSettingTab(columnSettingsTab);
 		columnSettingsTab.applyStyles();
 
 		// Render the columns for both read and live preview modes
@@ -98,14 +101,18 @@ export default class ColumnsPlugin extends Plugin {
 			let providedRatios = Array(totalCols).fill(0);
 
 			while ((match = ratioRegex.exec(metadataSection)) !== null) {
-			  const colIndex = parseInt(match[1], 10); // 1-based
-			  const ratio = parseFloat(match[2].trim());
-			
-			  if (!isNaN(ratio) && colIndex >= 1 && colIndex <= 4) {
-			    providedRatios[colIndex - 1] = ratio; // store as 0-based index
-			  }
+				const colIndex = parseInt(match[1], 10); // 1-based
+				const ratio = parseFloat(match[2].trim());
+
+				if (!isNaN(ratio) && colIndex >= 1 && colIndex <= 4) {
+					providedRatios[colIndex - 1] = ratio; // store as 0-based index
+				}
 			}
-			
+
+
+
+
+
 			// Render yaml as HTML container for the columns
 			const blockId = idMatch[1].trim();
 			const container = document.createElement("div");
@@ -132,37 +139,39 @@ export default class ColumnsPlugin extends Plugin {
 				const fillValue = (remainingPercent - providedSum) / zeroCount;
 
 				if (providedRatios.some(r => r === 0)) {
-				    providedRatios = providedRatios.map(r => (r === 0 ? fillValue : r));
+					providedRatios = providedRatios.map(r => (r === 0 ? fillValue : r));
 				} else {
-				    const halfOfResizer = resizerPercent / 2
-					providedRatios = providedRatios.map(x => x-halfOfResizer)
+					const halfOfResizer = resizerPercent / 2
+					providedRatios = providedRatios.map(x => x - halfOfResizer)
 				}
 
 				const checkSum = providedRatios.reduce((a, b) => a + b, 0) + totalResizerPercent;
 				if (Math.round(checkSum) !== 100) {
-    			    // Create a visible error message in the preview
-    			    const errorDiv = document.createElement("div");
-    			    errorDiv.style.color = "red";
-    			    errorDiv.style.fontWeight = "bold";
-    			    errorDiv.textContent = `Error: Column ratios must sum to 100%. Currently sum is ${checkSum}%.`;
-    			    el.appendChild(errorDiv);
-    			    return; // Stop further rendering
-    			}
-				
+					// Create a visible error message in the preview
+					const errorDiv = document.createElement("div");
+					errorDiv.style.color = "red";
+					errorDiv.style.fontWeight = "bold";
+					errorDiv.textContent = `Error: Column ratios must sum to 100%. Currently sum is ${checkSum}%.`;
+					el.appendChild(errorDiv);
+					return; // Stop further rendering
+				}
+
 				const providedRatiosString = providedRatios.map(r => `${r}%`);
 				this.app.saveLocalStorage(storageKey, JSON.stringify(providedRatiosString));
 			}
 
 			const savedWidths = this.app.loadLocalStorage(storageKey);
-			const columnWidths: string[] = savedWidths ? JSON.parse(savedWidths) : [];	
+			const columnWidths: string[] = savedWidths ? JSON.parse(savedWidths) : [];
+
+
 
 			const savedAlignments = this.app.loadLocalStorage(`sc-columnAlignments-${blockId}`);
 			const columnAlignments: Record<number, "left" | "center" | "right"> = savedAlignments ? JSON.parse(savedAlignments) : {};
 
-			const savedBackgrounds = this.app.loadLocalStorage(`sc-columnBackgrounds-${blockId}`);	
+			const savedBackgrounds = this.app.loadLocalStorage(`sc-columnBackgrounds-${blockId}`);
 			const columnBackgrounds: Record<number, string> = savedBackgrounds ? JSON.parse(savedBackgrounds) : {};
-			
-			const savedTextColors = this.app.loadLocalStorage(`sc-columnTextColors-${blockId}`);	
+
+			const savedTextColors = this.app.loadLocalStorage(`sc-columnTextColors-${blockId}`);
 			const columnTextColors: Record<number, string> = savedTextColors ? JSON.parse(savedTextColors) : {};
 
 			const borderData = JSON.parse(this.app.loadLocalStorage(`sc-borderColor-${blockId}`) || '{}');
@@ -174,9 +183,11 @@ export default class ColumnsPlugin extends Plugin {
 				container.style.setProperty("--sc-border-color", savedBorderColor);
 			}
 
+
+
 			const resizerData = JSON.parse(this.app.loadLocalStorage(`sc-resizerColor-${blockId}`) || '{}');
 			const savedResizerColor = resizerData.color;
-			const showResizer = resizerData.show;	
+			const showResizer = resizerData.show;
 
 			// Column Renderer to manage life cycle 
 			const child = new ColumnRenderer(container, blockId);
@@ -191,11 +202,13 @@ export default class ColumnsPlugin extends Plugin {
 				const align = columnAlignments[i] ?? "left";
 				const bg = columnBackgrounds[i] || "var(--background-primary)";
 				const textColor = columnTextColors[i] || "var(--text-normal)";
-				const width = columnWidths[i - 1] || `${100 / parts.length-1}%`;
+				const width = columnWidths[i - 1] || `${100 / parts.length - 1}%`;
 
 				col.style.setProperty('--sc-column-bg', bg);
 				col.style.setProperty('--sc-column-text-color', textColor);
 				col.style.setProperty('--sc-column-width', width);
+
+
 
 				col.classList.add(`text-${align}`);
 				col.classList.add('column-style');
@@ -210,20 +223,56 @@ export default class ColumnsPlugin extends Plugin {
 
 				container.appendChild(col);
 
+
+
+				// [NEW FEATURE] Add edit button to column
+				const editBtn = createEditButton(col, i);
+				editBtn.addEventListener("click", async (e) => {
+					e.stopPropagation(); // Prevent event bubbling
+
+					const sourceUpdater = new SourceUpdater(this.app);
+
+					// Get current content from source
+					const currentContent = await sourceUpdater.getColumnContent(blockId, i);
+
+					if (currentContent === null) {
+						new Notice("Could not retrieve column content. Please ensure the file is saved.");
+						return;
+					}
+
+					// Open edit modal
+					new EditColumnModal(
+						this.app,
+						this,
+						blockId,
+						i,
+						currentContent,
+						async (newContent) => {
+							const success = await sourceUpdater.updateColumnContent(blockId, i, newContent);
+							if (!success) {
+								throw new Error("Failed to update column content");
+							}
+							// Obsidian will automatically re-render the code block after file modification
+						}
+					).open();
+				});
+
+				col.appendChild(editBtn);
+
 				if (savedResizerColor) {
-				  const styleId = `sc-resizer-hover-style-${blockId}`;
-				  let existing = document.getElementById(styleId);
-				  if (existing) existing.remove(); // Clean up previous style
-								
-				  const css = `.markdown-columns-resizable[id="${blockId}"] > .column-resizer:hover {
+					const styleId = `sc-resizer-hover-style-${blockId}`;
+					let existing = document.getElementById(styleId);
+					if (existing) existing.remove(); // Clean up previous style
+
+					const css = `.markdown-columns-resizable[id="${blockId}"] > .column-resizer:hover {
 				    background-color: ${savedResizerColor} !important;
 				  }`;
-								
-				  const hoverStyle = document.createElement('style');
-				  hoverStyle.id = styleId; // Tag it for future cleanup
-				  hoverStyle.textContent = css;
-				  document.head.appendChild(hoverStyle);
-				} else{
+
+					const hoverStyle = document.createElement('style');
+					hoverStyle.id = styleId; // Tag it for future cleanup
+					hoverStyle.textContent = css;
+					document.head.appendChild(hoverStyle);
+				} else {
 					document.getElementById(`sc-resizer-hover-style-${blockId}`)?.remove();
 				}
 
@@ -237,38 +286,38 @@ export default class ColumnsPlugin extends Plugin {
 					}
 
 					container.appendChild(resizer);
-				
+
 					let isDragging = false;
-				
+
 					let startX: number;
 					let startPrevWidth: number;
 					let startNextWidth: number;
-					
+
 					// Get columns and their widths
 					resizer.addEventListener("mousedown", (e) => {
 						isDragging = true;
 						document.body.classList.add("cursor-col-resize");
 						startX = e.clientX;
-					
+
 						const prevCol = resizer.previousElementSibling as HTMLElement;
 						const nextCol = resizer.nextElementSibling as HTMLElement;
-					
+
 						startPrevWidth = prevCol.getBoundingClientRect().width;
 						startNextWidth = nextCol.getBoundingClientRect().width;
-					
+
 						e.preventDefault();
 					});
 
 					// Update column widths while dragging
 					document.addEventListener("mousemove", (e) => {
 						if (!isDragging) return;
-					
+
 						const dx = e.clientX - startX;
 						const containerWidth = container.getBoundingClientRect().width;
-					
+
 						const prevCol = resizer.previousElementSibling as HTMLElement;
 						const nextCol = resizer.nextElementSibling as HTMLElement;
-					
+
 						const newPrev = startPrevWidth + dx;
 						const newNext = startNextWidth - dx;
 
@@ -279,19 +328,19 @@ export default class ColumnsPlugin extends Plugin {
 
 						const percentPrev = (newPrev / containerWidth) * 100;
 						const percentNext = (newNext / containerWidth) * 100;
-					
+
 						prevCol.style.setProperty('--sc-column-width', `${percentPrev}%`);
 						nextCol.style.setProperty('--sc-column-width', `${percentNext}%`);
 					});
 
-					
+
 					// Stop dragging when mouse is released
 					// This will save the current widths to localStorage
 					document.addEventListener("mouseup", () => {
 						if (isDragging) {
 							isDragging = false;
 							document.body.classList.remove("cursor-col-resize");
-						
+
 							const widths = Array.from(container.querySelectorAll(".column")).map(
 								(col: any) => getComputedStyle(col).getPropertyValue('--sc-column-width')?.trim()
 							);
@@ -301,17 +350,19 @@ export default class ColumnsPlugin extends Plugin {
 				}
 			}
 
+
+
 			// Add a button to customise the columns within the code block
 			const parent = el.parentElement;
-  			if (parent && 
-				parent.className.includes("cm-preview-code-block")) {	
+			if (parent &&
+				parent.className.includes("cm-preview-code-block")) {
 				const customiseButton = createCustomiseButton(container)
 				customiseButton.addEventListener("click", () => {
 					new CustomiseColumnsModal(this.app, this, blockId, parts.length - 1, columnAlignments, columnBackgrounds, columnTextColors).open();
 				});
 				parent.appendChild(customiseButton);
 			}
-			
+
 			// Add the columns container to the rendered element
 			el.appendChild(container);
 		});
@@ -332,10 +383,10 @@ export default class ColumnsPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-    	this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  	}
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
 
-  	async saveSettings() {
-    	await this.saveData(this.settings);
-  	}	
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
 }
