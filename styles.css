@@ -109,94 +109,92 @@ If your plugin does not need CSS, delete this file.
 /* When resizer is hidden via settings */
 .column-vertical-resizer.resizer-visible {
   display: block;
-}
-}
 
-/* Container vertical resizer */
-.container-vertical-resizer {
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  right: 0;
-  height: 8px;
-  background-color: rgba(128, 128, 128, 0.15);
-  cursor: row-resize;
-  z-index: 11;
-}
 
-.container-vertical-resizer:hover {
-  background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
-  height: 12px;
-}
+  /* Container vertical resizer */
+  .container-vertical-resizer {
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background-color: rgba(128, 128, 128, 0.15);
+    cursor: row-resize;
+    z-index: 11;
+  }
 
-/* When resizer is hidden via settings */
-.container-vertical-resizer.resizer-visible {
-  display: block;
-}
-}
+  .container-vertical-resizer:hover {
+    background-color: var(--interactive-accent, rgba(128, 128, 128, 0.6));
+    height: 12px;
+  }
 
-.cursor-row-resize {
-  cursor: row-resize !important;
-}
+  /* When resizer is hidden via settings */
+  .container-vertical-resizer.resizer-visible {
+    display: block;
 
-/* === Customise Button in Code block === */
-.markdown-source-view.mod-cm6 .customise-columns-button {
-  padding: var(--size-2-2) var(--size-2-3);
-  position: absolute;
-  top: var(--size-2-2);
-  inset-inline-end: calc(var(--size-2-2) + 35px);
-  display: flex;
-  opacity: 0;
-  color: var(--text-muted);
-  border-radius: var(--radius-s);
-  cursor: var(--cursor);
-  background-color: transparent;
-  transition: background-color 0.2s ease;
-}
 
-.markdown-source-view.mod-cm6 .cm-preview-code-block:hover .customise-columns-button {
-  opacity: 1;
-}
+    .cursor-row-resize {
+      cursor: row-resize !important;
+    }
 
-.markdown-source-view.mod-cm6 .customise-columns-button:hover {
-  background-color: var(--background-modifier-hover);
-}
+    /* === Customise Button in Code block === */
+    .markdown-source-view.mod-cm6 .customise-columns-button {
+      padding: var(--size-2-2) var(--size-2-3);
+      position: absolute;
+      top: var(--size-2-2);
+      inset-inline-end: calc(var(--size-2-2) + 35px);
+      display: flex;
+      opacity: 0;
+      color: var(--text-muted);
+      border-radius: var(--radius-s);
+      cursor: var(--cursor);
+      background-color: transparent;
+      transition: background-color 0.2s ease;
+    }
 
-/* === Custom Column Modal Styling === */
-.alignment-button-group {
-  display: flex;
-  gap: 8px;
-}
+    .markdown-source-view.mod-cm6 .cm-preview-code-block:hover .customise-columns-button {
+      opacity: 1;
+    }
 
-.alignment-button-group .button {
-  min-width: 36px;
-  min-height: 36px;
-  padding: 4px;
-  border-radius: 4px;
-  border: 1px solid var(--text-muted);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
+    .markdown-source-view.mod-cm6 .customise-columns-button:hover {
+      background-color: var(--background-modifier-hover);
+    }
 
-.alignment-button-group .button:hover {
-  background-color: var(--background-modifier-hover);
-}
+    /* === Custom Column Modal Styling === */
+    .alignment-button-group {
+      display: flex;
+      gap: 8px;
+    }
 
-.alignment-button-group .active {
-  background-color: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-  color: var(--background-primary);
-}
+    .alignment-button-group .button {
+      min-width: 36px;
+      min-height: 36px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid var(--text-muted);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
 
-/* === Settings === */
-.column-resizer-settings {
-  margin-top: 25px;
-}
+    .alignment-button-group .button:hover {
+      background-color: var(--background-modifier-hover);
+    }
 
-.column-advanced-settings {
-  margin-top: 25px;
-}
+    .alignment-button-group .active {
+      background-color: var(--interactive-accent);
+      border-color: var(--interactive-accent);
+      color: var(--background-primary);
+    }
+
+    /* === Settings === */
+    .column-resizer-settings {
+      margin-top: 25px;
+    }
+
+    .column-advanced-settings {
+      margin-top: 25px;
+    }
