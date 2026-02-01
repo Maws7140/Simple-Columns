@@ -110,6 +110,7 @@ If your plugin does not need CSS, delete this file.
 .column-vertical-resizer.resizer-visible {
   display: block;
 }
+}
 
 /* Container vertical resizer */
 .container-vertical-resizer {
@@ -132,12 +133,11 @@ If your plugin does not need CSS, delete this file.
 .container-vertical-resizer.resizer-visible {
   display: block;
 }
+}
 
 .cursor-row-resize {
   cursor: row-resize !important;
 }
-
-
 
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
