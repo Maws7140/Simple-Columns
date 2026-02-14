@@ -75,8 +75,6 @@ If your plugin does not need CSS, delete this file.
   cursor: col-resize;
 }
 
-<<<<<<< HEAD=======
-
 /* Vertical resizer for individual columns */
 .column-vertical-resizer {
   position: absolute;
@@ -120,7 +118,6 @@ If your plugin does not need CSS, delete this file.
   cursor: row-resize !important;
 }
 
->>>>>>>58d8a1a (Fix direct editing to use inline contenteditable approach)
 
 /* === Customise Button in Code block === */
 .markdown-source-view.mod-cm6 .customise-columns-button {
